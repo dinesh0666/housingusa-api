@@ -1,11 +1,12 @@
 <?php
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\API\Frontend;
 use Illuminate\Http\Request; 
 use App\Http\Controllers\Controller; 
+use App\Http\Controllers\API\ApiBaseController;
 use App\User; 
 use Illuminate\Support\Facades\Auth; 
 use Validator;
-class UserController extends Controller 
+class AuthController extends ApiBaseController 
 {
 public $successStatus = 200;
 /** 
@@ -30,23 +31,25 @@ public $successStatus = 200;
      * 
 @return \Illuminate\Http\Response 
      */ 
-    public function register(Request $request) 
+    public function register() 
     { 
-        $validator = Validator::make($request->all(), [ 
+        $input = $this->getContent();
+        $validatData = ['name'=> $input['name'], 'email'=> $input['email'], 'password'=> $input['password'], 'c_password'=> $input['c_password']];
+        $validator = Validator::make($validatData, [ 
             'name' => 'required', 
             'email' => 'required|email', 
             'password' => 'required', 
             'c_password' => 'required|same:password', 
         ]);
-if ($validator->fails()) { 
+        if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
-$input = $request->all(); 
+        //$input = $request->all(); 
         $input['password'] = bcrypt($input['password']); 
         $user = User::create($input); 
         $success['token'] =  $user->createToken('MyApp')->accessToken; 
         $success['name'] =  $user->name;
-return response()->json(['success'=>$success], $this->successStatus); 
+        return response()->json(['success'=>$success], $this->successStatus); 
     }
 /** 
      * details api 
