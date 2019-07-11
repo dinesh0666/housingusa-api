@@ -13,8 +13,7 @@ class ApiBaseController extends Controller
      * @return array \Illuminate\Http\Request
      */
     public function getContent($requestObject = null)
-    {
-        if (app()->environment('testing')) {
+    {   if (app()->environment('testing')) {
             return request()->all();
         }
         $request = $requestObject;
