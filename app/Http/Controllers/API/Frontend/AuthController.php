@@ -6,9 +6,40 @@ use App\Http\Controllers\API\ApiBaseController;
 use App\User; 
 use Illuminate\Support\Facades\Auth; 
 use Validator;
+
+use App\Services\ApiResponse\ApiResponse;
+use App\Services\Constants\AppSuccessCodes;
+use App\Transformers\UserTransformer;
+use App\Services\Transformers\DataTransformer;
+use App\Repositories\UserRepository;
+
 class AuthController extends ApiBaseController 
 {
-public $successStatus = 200;
+     /**
+     * @var DataTransformer
+     */
+    private $dataTransformer;
+
+     /**
+     * @var UserRepository
+     */
+    private $userRepository;
+
+
+    public function __construct(UserRepository $userRepository, ApiResponse $apiResponse, DataTransformer $dataTransformer)
+    {
+        $this->userRepository = $userRepository;
+        $this->apiResponse = $apiResponse;
+        $this->dataTransformer = $dataTransformer;
+       
+    }
+
+
+
+
+
+
+
 /** 
      * login api 
      * 
@@ -16,10 +47,14 @@ public $successStatus = 200;
 @return \Illuminate\Http\Response 
      */ 
     public function login(){ 
-        if(Auth::attempt(['email' => request('email'), 'password' => request('password')])){ 
+        $input = $this->getContent();
+        if(Auth::attempt(['email' => $input['email'], 'password' => $input['password']])){ 
             $user = Auth::user(); 
-            $success['token'] =  $user->createToken('MyApp')->accessToken; 
-            return response()->json(['success' => $success], $this->successStatus); 
+            $token =  $user->createToken('MyApp')->accessToken; 
+            $userObject = $this->userRepository->getById($user->id);
+            $this->dataTransformer->addData($userObject, new UserTransformer(), 'item');
+            $user = $this->dataTransformer->getTransformedData();
+            return $this->apiResponse->response(['token' => $token, 'user' => $user], AppSuccessCodes::APP_LOGIN_SUCCESS);
         } 
         else{ 
             return response()->json(['error'=>'Unauthorised'], 401); 
@@ -47,19 +82,10 @@ public $successStatus = 200;
         //$input = $request->all(); 
         $input['password'] = bcrypt($input['password']); 
         $user = User::create($input); 
-        $success['token'] =  $user->createToken('MyApp')->accessToken; 
-        $success['name'] =  $user->name;
-        return response()->json(['success'=>$success], $this->successStatus); 
+        $token =  $user->createToken('MyApp')->accessToken; 
+        $userObject = $this->userRepository->getById($user->id);
+        $this->dataTransformer->addData($userObject, new UserTransformer(), 'item');
+        $user = $this->dataTransformer->getTransformedData();
+        return $this->apiResponse->response(['token' => $token, 'user' => $user], AppSuccessCodes::APP_REGISTER_SUCCESS);
     }
-/** 
-     * details api 
-     * 
-     * 
-@return \Illuminate\Http\Response 
-     */ 
-    public function details() 
-    { 
-        $user = Auth::user(); 
-        return response()->json(['success' => $user], $this->successStatus); 
-    } 
 }
