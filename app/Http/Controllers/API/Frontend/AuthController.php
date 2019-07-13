@@ -67,7 +67,7 @@ class AuthController extends ApiBaseController
 @return \Illuminate\Http\Response 
      */ 
     public function register() 
-    { 
+    {   
         $input = $this->getContent();
         $validatData = ['name'=> $input['name'], 'email'=> $input['email'], 'password'=> $input['password'], 'c_password'=> $input['c_password']];
         $validator = Validator::make($validatData, [ 
@@ -75,11 +75,10 @@ class AuthController extends ApiBaseController
             'email' => 'required|email', 
             'password' => 'required', 
             'c_password' => 'required|same:password', 
-        ]);
+            ]);
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
-        //$input = $request->all(); 
         $input['password'] = bcrypt($input['password']); 
         $user = User::create($input); 
         $token =  $user->createToken('MyApp')->accessToken; 
